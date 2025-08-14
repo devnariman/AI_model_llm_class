@@ -80,6 +80,12 @@ class AIModel_Llm:
         if not text:
             return
         # محتوای جدید را به انتهای system memory اضافه می‌کنیم
+       
+        with open("system_prompt.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if "content" in data:
+                self.system_prompt = data["content"]
+        
         if self.system_prompt:
             self.system_prompt = f"{self.system_prompt}\n{text}"
         else:
@@ -119,6 +125,15 @@ class AIModel_Llm:
         self.history.append({"role": "assistant", "content": reply})
         return reply
 
+
+
+    def delet_last_train(self):
+        with open("system_prompt.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+            data["content"] = data["content"].rsplit("\n", 1)[0]  # حذف آخرین خط
+            print(data["content"])
+            with open("system_prompt.json", "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
     # --------------------------------------------
     # حلقه‌ی چت مینیمال:
     # - اول پیام system ست است (قبلاً در history[0])
@@ -128,7 +143,7 @@ class AIModel_Llm:
         if self.llm is None:
             self.run_model()
 
-        print("Ready. Commands: ::exit | ::reset | ::train <text> ")
+        print("Ready. Commands: ::exit | ::reset | ::train <text> | ::delet_last_train ")
         while self.chat_loop_status:
             try:
                 user_inp = input("User: ").strip()
@@ -142,6 +157,12 @@ class AIModel_Llm:
             if user_inp == "::exit":
                 print("Assistant: Bye.")
                 break
+
+            if user_inp == "::delet_last_train":
+                self.delet_last_train()
+                print("Assistant: Last training data deleted.")
+                continue
+
             if user_inp == "::reset":
                 self.reset_history()
                 print("Assistant: Conversation memory cleared (system kept).")
